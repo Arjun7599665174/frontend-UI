@@ -1,49 +1,66 @@
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
+
 import Input from "../components/Input";
 import Button from "../components/Button";
 import Toast from "../components/Toast";
+import { registerValidation } from "../validations/authValidation";
 
 const Register = ({ setPage }) => {
-  const [name, setName] = useState("");
-  const [mobile, setMobile] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({
+    name: "",
+    mobile: "",
+    email: "",
+    password: "",
+  });
 
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState("");
   const [toastType, setToastType] = useState("");
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  };
+
+  const showToast = (message, type = "error") => {
+    setToast(message);
+    setToastType(type);
+  };
+
   const handleRegister = (e) => {
     e.preventDefault();
 
-    if (name === "" || mobile === "" || email === "" || password === "") {
-      setToast("Please fill all fields");
-      setToastType("error");
+    const errors = registerValidation(formData);
+
+    if (Object.keys(errors).length > 0) {
+      showToast(Object.values(errors)[0], "error");
       return;
     }
 
-    if (mobile.length !== 10) {
-      setToast("Mobile number must be 10 digits");
-      setToastType("error");
-      return;
-    }
+    const userData = {
+      name: formData.name.trim(),
+      mobile: formData.mobile.trim(),
+      email: formData.email.trim().toLowerCase(),
+      password: formData.password,
+    };
 
-    if (password.length < 6) {
-      setToast("Password must be at least 6 characters");
-      setToastType("error");
-      return;
-    }
+    localStorage.setItem("registeredUser", JSON.stringify(userData));
 
     setLoading(true);
 
     setTimeout(() => {
       setLoading(false);
-      setToast("Registration successful");
-      setToastType("success");
+      showToast("Registration successful", "success");
 
       setTimeout(() => {
         setPage("login");
-      }, 700);
+      }, 800);
     }, 1000);
   };
 
@@ -59,35 +76,48 @@ const Register = ({ setPage }) => {
 
         <Input
           label="Name"
+          name="name"
           type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+          value={formData.name}
+          onChange={handleChange}
           placeholder="Enter name"
         />
 
         <Input
           label="Mobile"
-          type="number"
-          value={mobile}
-          onChange={(e) => setMobile(e.target.value)}
+          name="mobile"
+          type="text"
+          value={formData.mobile}
+          onChange={handleChange}
           placeholder="Enter mobile number"
         />
 
         <Input
           label="Email"
+          name="email"
           type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          value={formData.email}
+          onChange={handleChange}
           placeholder="Enter email"
         />
 
-        <Input
-          label="Password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Enter password"
-        />
+        <div className="relative">
+          <Input
+            label="Password"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="Example: Arjun@123"
+          />
+
+          <span
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-9 cursor-pointer text-gray-500"
+          >
+            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+          </span>
+        </div>
 
         <Button text="Register" type="submit" loading={loading} />
 

@@ -1,20 +1,25 @@
 import { useState } from "react";
+
+import Employees from "./pages/Employees";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
-import Profile from "./pages/Profile";
 
 const App = () => {
   const [page, setPage] = useState("login");
 
-  return (
-    <>
-      {page === "login" && <Login setPage={setPage} />}
-      {page === "register" && <Register setPage={setPage} />}
-      {page === "dashboard" && <Dashboard setPage={setPage} />}
-      {page === "profile" && <Profile setPage={setPage} />}
-    </>
-  );
+  if (page === "login") {
+    return <Login setPage={setPage} />;
+  }
+
+  if (page === "register") {
+    return <Register setPage={setPage} />;
+  }
+  if (page === "employees") {
+  return <Employees page={page} setPage={setPage} />;
+}
+
+  return <Dashboard page={page} setPage={setPage} />;
 };
 
 export default App;
