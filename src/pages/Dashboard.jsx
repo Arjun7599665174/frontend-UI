@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Modal from "../components/Modal";
+import Modal from "../components/common/Modal";
 import Sidebar from "../components/layout/Sidebar";
 import Header from "../components/layout/Header";
 import { dashboardData } from "../data/mockData";

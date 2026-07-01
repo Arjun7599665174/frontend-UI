@@ -1,5 +1,5 @@
 import { useState } from "react";
-
+ import EmployeeDetails from"./pages/EmployeeDetails";
 import Employees from "./pages/Employees";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -19,6 +19,9 @@ const App = () => {
   return <Employees page={page} setPage={setPage} />;
 }
 
+if (page === "employeeDetails") {
+  return <EmployeeDetails setPage={setPage} />;
+}
   return <Dashboard page={page} setPage={setPage} />;
 };
 

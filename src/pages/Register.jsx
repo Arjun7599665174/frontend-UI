@@ -1,53 +1,38 @@
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
-import Input from "../components/Input";
-import Button from "../components/Button";
-import Toast from "../components/Toast";
-import { registerValidation } from "../validations/authValidation";
+import Input from "../components/common/Input";
+import Button from "../components/common/Button";
+import Toast from "../components/common/Toast";
+import { registerSchema } from "../validations/authValidation";
 
 const Register = ({ setPage }) => {
-  const [formData, setFormData] = useState({
-    name: "",
-    mobile: "",
-    email: "",
-    password: "",
-  });
-
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState("");
   const [toastType, setToastType] = useState("");
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-  };
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(registerSchema),
+  });
 
   const showToast = (message, type = "error") => {
     setToast(message);
     setToastType(type);
   };
 
-  const handleRegister = (e) => {
-    e.preventDefault();
-
-    const errors = registerValidation(formData);
-
-    if (Object.keys(errors).length > 0) {
-      showToast(Object.values(errors)[0], "error");
-      return;
-    }
-
+  const onSubmit = (data) => {
     const userData = {
-      name: formData.name.trim(),
-      mobile: formData.mobile.trim(),
-      email: formData.email.trim().toLowerCase(),
-      password: formData.password,
+      name: data.name.trim(),
+      mobile: data.mobile.trim(),
+      email: data.email.trim().toLowerCase(),
+      password: data.password,
     };
 
     localStorage.setItem("registeredUser", JSON.stringify(userData));
@@ -69,7 +54,7 @@ const Register = ({ setPage }) => {
       <Toast message={toast} type={toastType} />
 
       <form
-        onSubmit={handleRegister}
+        onSubmit={handleSubmit(onSubmit)}
         className="bg-white p-6 rounded-xl shadow-md w-full max-w-sm"
       >
         <h1 className="text-2xl font-bold text-center mb-5">Register</h1>
@@ -78,37 +63,48 @@ const Register = ({ setPage }) => {
           label="Name"
           name="name"
           type="text"
-          value={formData.name}
-          onChange={handleChange}
           placeholder="Enter name"
+          {...register("name")}
         />
+        {errors.name && (
+          <p className="text-red-500 text-sm mb-2">
+            {errors.name.message}
+          </p>
+        )}
 
         <Input
           label="Mobile"
           name="mobile"
           type="text"
-          value={formData.mobile}
-          onChange={handleChange}
           placeholder="Enter mobile number"
+          {...register("mobile")}
         />
+        {errors.mobile && (
+          <p className="text-red-500 text-sm mb-2">
+            {errors.mobile.message}
+          </p>
+        )}
 
         <Input
           label="Email"
           name="email"
           type="email"
-          value={formData.email}
-          onChange={handleChange}
           placeholder="Enter email"
+          {...register("email")}
         />
+        {errors.email && (
+          <p className="text-red-500 text-sm mb-2">
+            {errors.email.message}
+          </p>
+        )}
 
         <div className="relative">
           <Input
             label="Password"
             name="password"
             type={showPassword ? "text" : "password"}
-            value={formData.password}
-            onChange={handleChange}
             placeholder="Example: Arjun@123"
+            {...register("password")}
           />
 
           <span
@@ -119,7 +115,15 @@ const Register = ({ setPage }) => {
           </span>
         </div>
 
-        <Button text="Register" type="submit" loading={loading} />
+        {errors.password && (
+          <p className="text-red-500 text-sm mb-2">
+            {errors.password.message}
+          </p>
+        )}
+
+        <Button type="submit" loading={loading} fullWidth>
+          Register
+        </Button>
 
         <p className="text-center mt-4 text-sm">
           Already have an account?{" "}

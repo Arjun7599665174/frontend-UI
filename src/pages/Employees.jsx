@@ -1,41 +1,215 @@
 import { useMemo, useState } from "react";
 import Sidebar from "../components/layout/Sidebar";
 import Header from "../components/layout/Header";
-import EmployeeForm from "../components/employee/EmployeeForm";
-import DeleteModal from "../components/employee/DeleteModal";
+import Button from "../components/common/Button";
+import Input from "../components/common/Input";
+import Table from "../components/common/Table";
+import Filters from "../components/common/Filters";
+import ConfirmModal from "../components/common/ConfirmModal";
+import EmployeeDetails from "./EmployeeDetails";
 import { employeesData } from "../data/mockData";
+
+const emptyForm = {
+  name: "",
+  email: "",
+  phone: "",
+  dob: "",
+  gender: "Male",
+  pan: "",
+  aadhaar: "",
+  joiningDate: "",
+  department: "",
+  role: "",
+  employmentType: "",
+  salary: "",
+  hra: "",
+  pf: "",
+  bonus: "",
+  bankName: "",
+  accountNumber: "",
+  ifsc: "",
+  status: "Active",
+};
+
+const formSections = [
+  {
+    title: "PERSONAL DETAILS",
+    fields: [
+      { name: "name", placeholder: "Full Name *", required: true },
+      { name: "email", type: "email", placeholder: "Email *", required: true },
+      { name: "phone", placeholder: "Phone Number *", required: true },
+      { name: "dob", type: "date" },
+      { name: "pan", placeholder: "PAN Number" },
+      { name: "aadhaar", placeholder: "Aadhaar Number" },
+    ],
+  },
+  {
+    title: "EMPLOYMENT DETAILS",
+    fields: [
+      { name: "joiningDate", type: "date" },
+      { name: "department", placeholder: "Department *", required: true },
+      { name: "role", placeholder: "Designation *", required: true },
+      { name: "employmentType", placeholder: "Employment Type" },
+    ],
+  },
+  {
+    title: "SALARY DETAILS",
+    fields: [
+      { name: "salary", type: "number", placeholder: "Basic Salary *", required: true },
+      { name: "hra", type: "number", placeholder: "HRA" },
+      { name: "pf", type: "number", placeholder: "PF" },
+      { name: "bonus", type: "number", placeholder: "Bonus" },
+    ],
+  },
+  {
+    title: "BANK DETAILS",
+    fields: [
+      { name: "bankName", placeholder: "Bank Name" },
+      { name: "accountNumber", placeholder: "Account Number" },
+      { name: "ifsc", placeholder: "IFSC Code" },
+    ],
+  },
+];
 
 const Employees = ({ page, setPage }) => {
   const [employees, setEmployees] = useState(employeesData);
   const [search, setSearch] = useState("");
-  const [department, setDepartment] = useState("All");
-  const [status, setStatus] = useState("All");
+  const [department, setDepartment] = useState("");
+  const [status, setStatus] = useState("");
 
   const [showForm, setShowForm] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [formMode, setFormMode] = useState("add");
+  const [form, setForm] = useState(emptyForm);
   const [deleteEmployee, setDeleteEmployee] = useState(null);
 
   const filteredEmployees = useMemo(() => {
     return employees.filter((emp) => {
+      const keyword = search.toLowerCase();
+
       const matchSearch =
-        emp.name.toLowerCase().includes(search.toLowerCase()) ||
-        emp.code.toLowerCase().includes(search.toLowerCase()) ||
-        emp.role.toLowerCase().includes(search.toLowerCase());
+        emp.name.toLowerCase().includes(keyword) ||
+        emp.code.toLowerCase().includes(keyword) ||
+        emp.role.toLowerCase().includes(keyword);
 
       const matchDepartment =
-        department === "All" || emp.department === department;
+        department === "" || department === "All" || emp.department === department;
 
-      const matchStatus = status === "All" || emp.status === status;
+      const matchStatus =
+        status === "" || status === "All" || emp.status === status;
 
       return matchSearch && matchDepartment && matchStatus;
     });
   }, [employees, search, department, status]);
 
-  const handleAddEmployee = (newEmployee) => {
-    setEmployees([newEmployee, ...employees]);
+  const employeeColumns = [
+    {
+      label: "Employee",
+      render: (emp) => (
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center font-bold">
+            {emp.code}
+          </div>
+          <div>
+            <p className="font-semibold text-slate-800">{emp.name}</p>
+            <p className="text-xs text-slate-400">#{emp.id}</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      label: "Role",
+      render: (emp) => (
+        <div>
+          <p className="font-medium text-slate-700">{emp.role}</p>
+          <p className="text-xs text-slate-400">{emp.department}</p>
+        </div>
+      ),
+    },
+    {
+      label: "Contact",
+      render: (emp) => (
+        <div>
+          <p className="text-slate-700">{emp.email}</p>
+          <p className="text-xs text-slate-400">{emp.phone}</p>
+        </div>
+      ),
+    },
+    {
+      label: "Base Salary",
+      render: (emp) => (
+        <span className="font-semibold text-slate-700">
+          Rs. {Number(emp.salary || 0).toLocaleString("en-IN")}
+        </span>
+      ),
+    },
+    {
+      label: "Status",
+      render: (emp) => (
+        <span className="px-3 py-1 rounded-full bg-sky-100 text-sky-700 text-xs font-semibold">
+          {emp.status}
+        </span>
+      ),
+    },
+  ];
+
+  const openAddForm = () => {
+    setSelectedEmployee(null);
+    setForm(emptyForm);
+    setFormMode("add");
+    setShowForm(true);
   };
 
-  const handleDeleteEmployee = (id) => {
-    setEmployees(employees.filter((emp) => emp.id !== id));
+  const openEditForm = (emp) => {
+    setSelectedEmployee(null);
+    setForm({ ...emptyForm, ...emp });
+    setFormMode("edit");
+    setShowForm(true);
+  };
+
+  const openViewDetails = (emp) => {
+    setShowForm(false);
+    setSelectedEmployee(emp);
+  };
+
+  const closeForm = () => {
+    setShowForm(false);
+    setSelectedEmployee(null);
+    setForm(emptyForm);
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSaveEmployee = (e) => {
+    e.preventDefault();
+
+    const employeeData = {
+      ...form,
+      salary: Number(form.salary || 0),
+      hra: Number(form.hra || 0),
+      pf: Number(form.pf || 0),
+      bonus: Number(form.bonus || 0),
+      code: form.name.slice(0, 2).toUpperCase(),
+    };
+
+    if (formMode === "edit") {
+      setEmployees((prev) =>
+        prev.map((emp) =>
+          emp.id === form.id ? { ...employeeData, id: emp.id } : emp
+        )
+      );
+    } else {
+      setEmployees((prev) => [{ ...employeeData, id: Date.now() }, ...prev]);
+    }
+
+    closeForm();
+  };
+
+  const handleDeleteEmployee = () => {
+    setEmployees((prev) => prev.filter((emp) => emp.id !== deleteEmployee.id));
     setDeleteEmployee(null);
   };
 
@@ -47,158 +221,179 @@ const Employees = ({ page, setPage }) => {
         <Header title="Payroll Management" setPage={setPage} />
 
         <section className="p-4 md:p-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
-            <div>
-              <h1 className="text-xl md:text-2xl font-bold text-slate-800">
-                Employee Management
-              </h1>
-              <p className="text-sm text-slate-500">
-                Manage your team of {employees.length} employees
-              </p>
-            </div>
+          {!showForm && !selectedEmployee && (
+            <>
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
+                <div>
+                  <h1 className="text-xl md:text-2xl font-bold text-slate-800">
+                    Employee Management
+                  </h1>
+                  <p className="text-sm text-slate-500">
+                    Manage your team of {employees.length} employees
+                  </p>
+                </div>
 
-            <button
-              onClick={() => setShowForm(true)}
-              className="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium"
-            >
-              + Add Employee
-            </button>
-          </div>
+                <Button onClick={openAddForm}>+ Add Employee</Button>
+              </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
-              <input
-                type="text"
-                placeholder="Search by name, ID, or position..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="border border-slate-200 rounded-lg px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-100"
-              />
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                <Filters
+                  search={search}
+                  setSearch={setSearch}
+                  filters={[
+                    {
+                      name: "department",
+                      value: department,
+                      onChange: setDepartment,
+                      label: "Departments",
+                      options: [
+                        "All",
+                        "Management",
+                        "Marketing",
+                        "Sales",
+                        "Support",
+                        "HR",
+                        "Finance",
+                        "Engineering",
+                      ],
+                    },
+                    {
+                      name: "status",
+                      value: status,
+                      onChange: setStatus,
+                      label: "Status",
+                      options: ["All", "Active", "Inactive"],
+                    },
+                  ]}
+                />
 
-              <select
-                value={department}
-                onChange={(e) => setDepartment(e.target.value)}
-                className="border border-slate-200 rounded-lg px-4 py-2 text-sm outline-none"
-              >
-                <option value="All">All Departments</option>
-                <option value="Management">Management</option>
-                <option value="Marketing">Marketing</option>
-                <option value="Sales">Sales</option>
-                <option value="Support">Support</option>
-                <option value="HR">HR</option>
-                <option value="Finance">Finance</option>
-                <option value="Engineering">Engineering</option>
-              </select>
+                <Table
+                  columns={employeeColumns}
+                  data={filteredEmployees}
+                  actions={(emp) => (
+                    <>
+                      <button
+                        onClick={() => openViewDetails(emp)}
+                        className="text-slate-500 hover:text-sky-600"
+                      >
+                        View
 
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="border border-slate-200 rounded-lg px-4 py-2 text-sm outline-none"
-              >
-                <option value="All">All Status</option>
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-              </select>
-            </div>
+                      </button>
 
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[850px] text-sm">
-                <thead>
-                  <tr className="text-left text-slate-500 border-b">
-                    <th className="py-3 px-3">Employee</th>
-                    <th className="py-3 px-3">Role</th>
-                    <th className="py-3 px-3">Contact</th>
-                    <th className="py-3 px-3">Base Salary</th>
-                    <th className="py-3 px-3">Status</th>
-                    <th className="py-3 px-3 text-right">Actions</th>
-                  </tr>
-                </thead>
+                      <button
+                        onClick={() => openEditForm(emp)}
+                        className="text-slate-500 hover:text-green-600"
+                      >
+                        Edit
+                      </button>
 
-                <tbody>
-                  {filteredEmployees.map((emp) => (
-                    <tr key={emp.id} className="border-b last:border-b-0">
-                      <td className="py-4 px-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center font-bold">
-                            {emp.code}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-slate-800">
-                              {emp.name}
-                            </p>
-                            <p className="text-xs text-slate-400">#{emp.id}</p>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="py-4 px-3">
-                        <p className="font-medium text-slate-700">{emp.role}</p>
-                        <p className="text-xs text-slate-400">
-                          {emp.department}
-                        </p>
-                      </td>
-
-                      <td className="py-4 px-3">
-                        <p className="text-slate-700">{emp.email}</p>
-                        <p className="text-xs text-slate-400">{emp.phone}</p>
-                      </td>
-
-                      <td className="py-4 px-3 font-semibold text-slate-700">
-                        Rs. {emp.salary.toLocaleString("en-IN")}
-                      </td>
-
-                      <td className="py-4 px-3">
-                        <span className="px-3 py-1 rounded-full bg-sky-100 text-sky-700 text-xs font-semibold">
-                          {emp.status}
-                        </span>
-                      </td>
-
-                      <td className="py-4 px-3">
-                        <div className="flex justify-end gap-3">
-                          <button className="text-slate-500 hover:text-sky-600">
-                            View
-                          </button>
-
-                          <button className="text-slate-500 hover:text-green-600">
-                            Edit
-                          </button>
-
-                          <button
-                            onClick={() => setDeleteEmployee(emp)}
-                            className="text-slate-500 hover:text-red-600"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-
-                  {filteredEmployees.length === 0 && (
-                    <tr>
-                      <td colSpan="6" className="text-center py-8 text-slate-400">
-                        No employee found
-                      </td>
-                    </tr>
+                      <button
+                        onClick={() => setDeleteEmployee(emp)}
+                        className="text-slate-500 hover:text-red-600"
+                      >
+                        Delete
+                      </button>
+                    </>
                   )}
-                </tbody>
-              </table>
+                />
+              </div>
+            </>
+          )}
+
+          {selectedEmployee && (
+            <EmployeeDetails
+            
+              employee={selectedEmployee}
+              onBack={() => setSelectedEmployee(null)}
+            />
+          )}
+
+          {showForm && (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 md:p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-800">
+                    {formMode === "add" ? "Add New Employee" : "Edit Employee"}
+                  </h2>
+                  <p className="text-sm text-slate-500">
+                    Fill personal, job, salary and bank details
+                  </p>
+                </div>
+
+                <Button variant="secondary" onClick={closeForm}>
+                  Back
+                </Button>
+              </div>
+
+              <form onSubmit={handleSaveEmployee}>
+                {formSections.map((section) => (
+                  <div key={section.title} className="mb-6">
+                    <h3 className="text-sm font-bold text-slate-500 mb-3">
+                      {section.title}
+                    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {section.fields.map((field) => (
+                        <Input
+                          key={field.name}
+                          name={field.name}
+                          type={field.type || "text"}
+                          placeholder={field.placeholder}
+                          value={form[field.name]}
+                          onChange={handleChange}
+                          required={field.required}
+                        />
+                      ))}
+
+                      {section.title === "PERSONAL DETAILS" && (
+                        <select
+                          name="gender"
+                          value={form.gender}
+                          onChange={handleChange}
+                          className="border border-slate-200 rounded-lg px-4 py-2 text-sm outline-none"
+                        >
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      )}
+
+                      {section.title === "EMPLOYMENT DETAILS" && (
+                        <select
+                          name="status"
+                          value={form.status}
+                          onChange={handleChange}
+                          className="border border-slate-200 rounded-lg px-4 py-2 text-sm outline-none"
+                        >
+                          <option value="Active">Active</option>
+                          <option value="Inactive">Inactive</option>
+                        </select>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                <div className="flex justify-end gap-3">
+                  <Button type="button" variant="secondary" onClick={closeForm}>
+                    Cancel
+                  </Button>
+
+                  <Button type="submit">
+                    {formMode === "edit" ? "Update Employee" : "Save Employee"}
+                  </Button>
+                </div>
+              </form>
             </div>
-          </div>
+          )}
         </section>
       </main>
 
-      {showForm && (
-        <EmployeeForm
-          onClose={() => setShowForm(false)}
-          onSave={handleAddEmployee}
-        />
-      )}
-
-      <DeleteModal
-        employee={deleteEmployee}
-        onClose={() => setDeleteEmployee(null)}
-        onDelete={handleDeleteEmployee}
+      <ConfirmModal
+        isOpen={!!deleteEmployee}
+        title="Delete Employee"
+        message={`Are you sure you want to delete ${deleteEmployee?.name}?`}
+        onCancel={() => setDeleteEmployee(null)}
+        onConfirm={handleDeleteEmployee}
       />
     </div>
   );

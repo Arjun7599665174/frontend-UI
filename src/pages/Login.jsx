@@ -1,47 +1,34 @@
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
-import Input from "../components/Input";
-import Button from "../components/Button";
-import Toast from "../components/Toast";
-import Loader from "../components/Loader";
-import { loginValidation } from "../validations/authValidation";
+import Input from "../components/common/Input";
+import Button from "../components/common/Button";
+import Toast from "../components/common/Toast";
+import Loader from "../components/common/Loader";
+import { loginSchema } from "../validations/authValidation";
 
 const Login = ({ setPage }) => {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
-
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState("");
   const [toastType, setToastType] = useState("");
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-  };
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(loginSchema),
+  });
 
   const showToast = (message, type = "error") => {
     setToast(message);
     setToastType(type);
   };
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-
-    const errors = loginValidation(formData);
-
-    if (Object.keys(errors).length > 0) {
-      showToast(Object.values(errors)[0], "error");
-      return;
-    }
-
+  const onSubmit = (data) => {
     const registeredUser = JSON.parse(localStorage.getItem("registeredUser"));
 
     if (!registeredUser) {
@@ -54,8 +41,8 @@ const Login = ({ setPage }) => {
       return;
     }
 
-    const enteredEmail = formData.email.trim().toLowerCase();
-    const enteredPassword = formData.password;
+    const enteredEmail = data.email.trim().toLowerCase();
+    const enteredPassword = data.password;
 
     if (
       enteredEmail === registeredUser.email &&
@@ -84,28 +71,29 @@ const Login = ({ setPage }) => {
       {loading && <Loader />}
 
       <form
-        onSubmit={handleLogin}
+        onSubmit={handleSubmit(onSubmit)}
         className="bg-white p-6 rounded-xl shadow-md w-full max-w-sm"
       >
         <h1 className="text-2xl font-bold text-center mb-5">Login</h1>
 
         <Input
           label="Email"
-          name="email"
           type="email"
-          value={formData.email}
-          onChange={handleChange}
           placeholder="Enter email"
+          {...register("email")}
         />
+        {errors.email && (
+          <p className="text-red-500 text-sm mb-2">
+            {errors.email.message}
+          </p>
+        )}
 
         <div className="relative">
           <Input
             label="Password"
-            name="password"
             type={showPassword ? "text" : "password"}
-            value={formData.password}
-            onChange={handleChange}
             placeholder="Enter password"
+            {...register("password")}
           />
 
           <span
@@ -116,7 +104,15 @@ const Login = ({ setPage }) => {
           </span>
         </div>
 
-        <Button text="Login" type="submit" loading={loading} />
+        {errors.password && (
+          <p className="text-red-500 text-sm mb-2">
+            {errors.password.message}
+          </p>
+        )}
+
+        <Button type="submit" loading={loading} fullWidth>
+          Login
+        </Button>
 
         <p className="text-center mt-4 text-sm">
           Don&apos;t have an account?{" "}
