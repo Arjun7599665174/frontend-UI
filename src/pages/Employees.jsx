@@ -91,12 +91,15 @@ const Employees = ({ page, setPage }) => {
         emp.name.toLowerCase().includes(keyword) ||
         emp.code.toLowerCase().includes(keyword) ||
         emp.role.toLowerCase().includes(keyword);
+     const matchDepartment =
+  department === "" ||
+  department === "All Departments" ||
+  emp.department === department;
 
-      const matchDepartment =
-        department === "" || department === "All" || emp.department === department;
-
-      const matchStatus =
-        status === "" || status === "All" || emp.status === status;
+const matchStatus =
+  status === "" ||
+  status === "All Status" ||
+  emp.status === status;
 
       return matchSearch && matchDepartment && matchStatus;
     });
@@ -236,36 +239,38 @@ const Employees = ({ page, setPage }) => {
                 <Button onClick={openAddForm}>+ Add Employee</Button>
               </div>
 
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-                <Filters
-                  search={search}
-                  setSearch={setSearch}
-                  filters={[
-                    {
-                      name: "department",
-                      value: department,
-                      onChange: setDepartment,
-                      label: "Departments",
-                      options: [
-                        "All",
-                        "Management",
-                        "Marketing",
-                        "Sales",
-                        "Support",
-                        "HR",
-                        "Finance",
-                        "Engineering",
-                      ],
-                    },
-                    {
-                      name: "status",
-                      value: status,
-                      onChange: setStatus,
-                      label: "Status",
-                      options: ["All", "Active", "Inactive"],
-                    },
-                  ]}
-                />
+             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-5">
+  <Filters
+  search={search}
+  setSearch={setSearch}
+  searchPlaceholder="Search employees..."
+  filters={[
+    {
+      name: "department",
+      value: department,
+      onChange: setDepartment,
+      label: "Department",
+      options: [
+        "All Departments",
+        "Management",
+        "Marketing",
+        "Sales",
+        "Support",
+        "HR",
+        "Finance",
+        "Engineering",
+      ],
+    },
+    {
+      name: "status",
+      value: status,
+      onChange: setStatus,
+      label: "Status",
+      options: ["All Status", "Active", "Inactive"],
+    },
+  ]}
+/>
+  
 
                 <Table
                   columns={employeeColumns}
